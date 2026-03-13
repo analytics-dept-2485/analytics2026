@@ -311,7 +311,7 @@ export async function GET(request) {
           if (latest3Matches.length === 0) return 0;
           return latest3Matches.reduce((sum, m) => sum + m.avgEnd, 0) / latest3Matches.length;
         },
-        
+        //Add TBA to pull win/lose auto
         // Extract match and performance metrics (include winauto for win/loss dots on all over-time charts)
         epaOverTime: arr => tidy(arr, select(['epa', 'match', 'winauto'])),
         autoOverTime: arr => tidy(arr, select(['match', 'auto', 'winauto'])),
