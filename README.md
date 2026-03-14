@@ -66,7 +66,8 @@ CREATE TABLE eventCompetitionYear (
    -- Comments
    GeneralComments TEXT,
    BreakdownComments TEXT,
-   DefenseComments TEXT
+   DefenseComments TEXT,
+   FoulComments TEXT
 );
 
 -- Example INSERT statement
@@ -79,7 +80,7 @@ INSERT INTO eventCompetitionYear (
    ShootingMechanism, Bump, Trench, StuckOnFuel, PlayedDefense, Defense,
    Aggression, ClimbHazard, HopperCapacity, Maneuverability, DefenseEvasion,
    ClimbSpeed, FuelSpeed, PassingQuantity, AutoDeclimbSpeed, BumpSpeed,
-   GeneralComments, BreakdownComments, DefenseComments
+   GeneralComments, BreakdownComments, DefenseComments, FoulComments
 )
 VALUES (
    'John Doe', 2485, 4909, 12, 2, FALSE,
@@ -90,8 +91,8 @@ VALUES (
    1, FALSE, TRUE, FALSE, 75, TRUE, 1,
    4, 2, 5, 4, 5, 3,
    4, 5, 3, 2, 3,
-   'Performed well overall with strong fuel scoring.', 'did not break down', 'Played effective defense at outpost'
+   'Performed well overall with strong fuel scoring.', 'did not break down', 'Played effective defense at outpost', NULL
 );
 
-
+To add the FoulComments column to an existing table, run from the project root: `node analytics2026/scripts/migrate-add-foulcomments.mjs` (uses `.env.local` with POSTGRES_URL or DATABASE_URL).
 

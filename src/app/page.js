@@ -92,7 +92,7 @@ export default function Home() {
     submitButton.disabled = true;
     //import values from form to data variable
 
-    let data = { noshow: false, breakdowncomments: null, defensecomments: null, generalcomments: null };
+    let data = { noshow: false, breakdowncomments: null, defensecomments: null, generalcomments: null, foulcomments: null };
     [...new FormData(form.current).entries()].forEach(([name, value]) => {
       if (value == 'on') {
         data[name] = true;
@@ -211,6 +211,7 @@ if (playedDefenseValue && defenseType) {
     data.bump = data.bump === true;
     data.trench = data.trench === true;
     data.fouls = Number(data.fouls) || 0;
+    data.foulcomments = data.foulcomments != null && data.foulcomments !== undefined ? String(data.foulcomments).trim() : "";
 
     data.breakdown = undefined;
 

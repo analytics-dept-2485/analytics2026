@@ -28,7 +28,7 @@ export async function GET(request) {
       return arr => arr.some(row => row[index] === true);
     }
     // String/Text fields - join with " - "
-    if (['scoutname', 'generalcomments', 'breakdowncomments', 'defensecomments'].includes(index)) {
+    if (['scoutname', 'generalcomments', 'breakdowncomments', 'defensecomments', 'foulcomments'].includes(index)) {
       return arr => arr.map(row => row[index]).filter(a => a != null).join(" - ") || null;
     }
     // Integer enum fields - format and join with " - "
@@ -324,7 +324,7 @@ export async function GET(request) {
         },
         //Add TBA to pull win/lose auto
         // Extract match and performance metrics (include winauto for win/loss dots on all over-time charts)
-        epaOverTime: arr => tidy(arr, select(['epa', 'match', 'winauto'])),
+        epaOverTime: arr => tidy(arr, select(['epa', 'match', 'winauto', 'fouls'])),
         autoOverTime: arr => tidy(arr, select(['match', 'auto', 'winauto'])),
         teleOverTime: arr => tidy(arr, select(['match', 'tele', 'winauto'])),
       
@@ -429,7 +429,25 @@ export async function GET(request) {
           
           return result.length > 0 ? result : [];
         },
-      
+
+        foulComments: arr => {
+          const commentsByMatch = {};
+          arr.forEach(row => {
+            if (row.foulcomments && row.foulcomments.trim()) {
+              if (!commentsByMatch[row.match]) {
+                commentsByMatch[row.match] = [];
+              }
+              commentsByMatch[row.match].push(row.foulcomments);
+            }
+          });
+
+          const result = Object.entries(commentsByMatch).map(([match, comments]) =>
+            ` *Match ${match}: ${comments.join(' -- ')}*`
+          );
+
+          return result.length > 0 ? result : [];
+        },
+
     // Defense comments removed - not in 2026 schema
     // Defense information is now in Defense field (weak/harassment/game changing) and PlayedDefense boolean
     autoOverTime: arr => tidy(arr, select(['match', 'auto', 'winauto'])),
@@ -833,6 +851,10 @@ function aggregateByMatch(dataArray) {
           if (withVal.length === 0) return undefined;
           const wins = withVal.filter(d => d.winauto === true || d.winauto === 1).length;
           return wins >= withVal.length / 2;
+        },
+        fouls: (items) => {
+          const valid = items.map(d => Number(d.fouls)).filter(v => Number.isFinite(v));
+          return valid.length ? Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 10) / 10 : undefined;
         },
       }),
     ]),

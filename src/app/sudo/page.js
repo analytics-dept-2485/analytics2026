@@ -188,6 +188,7 @@ export default function Sudo() {
     "generalcomments",
     "breakdowncomments",
     "defensecomments",
+    "foulcomments",
   ].map((element) => {
     if (typeof element == "object") return element;
     if (element.includes("Comments")) {

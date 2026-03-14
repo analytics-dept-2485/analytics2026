@@ -101,6 +101,7 @@ function TeamView() {
        generalComments: Array.isArray(api.generalComments) ? api.generalComments : [],
        breakdownComments: Array.isArray(api.breakdownComments) ? api.breakdownComments : [],
        defenseComments: Array.isArray(api.defenseComments) ? api.defenseComments : [],
+       foulComments: Array.isArray(api.foulComments) ? api.foulComments : [],
        autoclimb: {
          success: round10(api.auto?.climb?.successRate),
          fail: round10(api.auto?.climb?.failRate),
@@ -379,6 +380,7 @@ function TeamView() {
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"General Comments"} value={data.generalComments} />
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Breakdown Comments"} value={data.breakdownComments} />
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Defense Comments"} value={data.defenseComments} />
+                   <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Foul Elaboration"} value={data.foulComments} />
                  </div>
                  <HBox color1={Colors[0][1]} color2={Colors[0][0]} title={"Scouts"} value={data.scouts} />
                </div>

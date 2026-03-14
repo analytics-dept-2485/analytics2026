@@ -191,7 +191,9 @@ if (body.playeddefense) {
   if (!_.isString(body.generalcomments)) body.generalcomments = body.generalcomments != null ? String(body.generalcomments) : "";
   if (body.breakdowncomments != null && !_.isString(body.breakdowncomments)) body.breakdowncomments = String(body.breakdowncomments);
   if (body.defensecomments != null && !_.isString(body.defensecomments)) body.defensecomments = String(body.defensecomments);
-  
+  if (body.foulcomments != null && !_.isString(body.foulcomments)) body.foulcomments = String(body.foulcomments);
+  if (body.foulcomments == null || body.foulcomments === undefined) body.foulcomments = "";
+
   // Insert Data into Database
   let resp = await sql`
     INSERT INTO phd2026 (
@@ -202,7 +204,7 @@ if (body.playeddefense) {
       shootingmechanism, bump, trench, stuckonfuel, stuckonbump, fouls, playeddefense, defense,
       aggression, climbhazard, hoppercapacity, maneuverability, defenseevasion,
       climbspeed, fuelspeed, passingquantity, autodeclimbspeed, bumpspeed,
-      generalcomments, breakdowncomments, defensecomments
+      generalcomments, breakdowncomments, defensecomments, foulcomments
     )
     VALUES (
       ${body.scoutname}, ${body.scoutteam}, ${body.team}, ${adjustedMatch}, ${body.matchType}, ${body.noshow},
@@ -213,7 +215,7 @@ if (body.playeddefense) {
       ${body.shootingmechanism}, ${body.bump}, ${body.trench}, ${body.stuckonfuel}, ${body.stuckonbump}, ${body.fouls}, ${body.fuelpercent}, ${body.playeddefense}, ${body.defense},
       ${body.aggression}, ${body.climbhazard}, ${body.hoppercapacity}, ${body.maneuverability}, ${body.durability}, ${body.defenseevasion},
       ${body.climbspeed}, ${body.fuelspeed}, ${body.passingquantity}, ${body.autodeclimbspeed}, ${body.bumpspeed},
-      ${body.generalcomments}, ${body.breakdowncomments || null}, ${body.defensecomments || null}
+      ${body.generalcomments}, ${body.breakdowncomments || null}, ${body.defensecomments || null}, ${body.foulcomments || null}
     )
   `;
 
