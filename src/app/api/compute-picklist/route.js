@@ -161,6 +161,21 @@ export async function POST(request) {
     teamPassingPct[team] = t.total > 0 ? (t.withPassing / t.total) * 100 : 0;
   });
 
+  const teamFoulsMap = {};
+  rows.forEach(row => {
+    const team = row.team;
+    if (!teamFoulsMap[team]) teamFoulsMap[team] = { sum: 0, count: 0 };
+    teamFoulsMap[team].sum += (Number(row.fouls) || 0);
+    teamFoulsMap[team].count += 1;
+  });
+  const teamFoulsAvg = {};
+  let maxFoulsAvg = 0;
+  for (const team in teamFoulsMap) {
+    const t = teamFoulsMap[team];
+    teamFoulsAvg[team] = t.count > 0 ? t.sum / t.count : 0;
+    if (teamFoulsAvg[team] > maxFoulsAvg) maxFoulsAvg = teamFoulsAvg[team];
+  }
+
   teamTable = tidy(teamTable, mutate({
     auto: d => calcAuto(d),
     epa: d => calcEPA(d),
@@ -171,13 +186,16 @@ export async function POST(request) {
     defense: d => {
       const played = d.defenseplayed ?? d.playeddefense;
       if (played === false || played === null || played === undefined) return 0;
-      if (typeof played === 'number' && played > 0) return played * 10;
       let score = 0;
-      const type = d.defense;
-      if (type === 0 || (typeof type === 'string' && String(type).toLowerCase() === 'weak')) score += 1;
-      else if (type === 1 || (typeof type === 'string' && String(type).toLowerCase() === 'harassment')) score += 5;
-      else if (type === 2 || (typeof type === 'string' && String(type).toLowerCase() === 'game changing')) score += 10;
-      return score;
+      if (typeof played === 'number' && played > 0) { score = played * 10; }
+      else {
+        const type = d.defense;
+        if (type === 0 || (typeof type === 'string' && String(type).toLowerCase() === 'weak')) score += 1;
+        else if (type === 1 || (typeof type === 'string' && String(type).toLowerCase() === 'harassment')) score += 5;
+        else if (type === 2 || (typeof type === 'string' && String(type).toLowerCase() === 'game changing')) score += 10;
+      }
+      const foulRate = maxFoulsAvg > 0 ? (teamFoulsAvg[d.team] ?? 0) / maxFoulsAvg : 0;
+      return score * (1 - foulRate);
     },
     consistency: d => teamConsistencyMap[d.team] ?? 0,
     epaCapacity: d => epaCapacityMap[d.team] ?? 0,

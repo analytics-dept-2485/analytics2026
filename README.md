@@ -45,6 +45,7 @@ CREATE TABLE eventCompetitionYear (
    Trench BOOLEAN,
    StuckOnFuel BOOLEAN,
    StuckOnBump BOOLEAN,
+   Fouls INT DEFAULT 0,
    -- Percentage as integer (0-100)
    PlayedDefense BOOLEAN,
    Defense INT, -- 0=weak, 1=harassment, 2=game changing (only set if PlayedDefense is true)

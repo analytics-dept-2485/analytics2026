@@ -210,6 +210,7 @@ if (playedDefenseValue && defenseType) {
 
     data.bump = data.bump === true;
     data.trench = data.trench === true;
+    data.fouls = Number(data.fouls) || 0;
 
     data.breakdown = undefined;
 
