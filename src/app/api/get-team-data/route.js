@@ -85,27 +85,38 @@ export async function GET(request) {
     return arr.filter(e => e[index] === value).length / arr.length;
   }
 
-  // fetch team name from blue alliance api, commented our for now while testing getting from the backend
-  const teamName = await fetch(`https://www.thebluealliance.com/api/v3/team/frc${team}/simple`, {
-    headers: {
-      "X-TBA-Auth-Key": process.env.TBA_AUTH_KEY,
-      "Accept": "application/json"
-    },
-  })
-  .then(resp => {
-    if (resp.status !== 200) {
-      console.error(`TBA API Error: Received status ${resp.status}`);
-      return null;  // Return null if the request fails
+  const tbaHeaders = { 'X-TBA-Auth-Key': process.env.TBA_AUTH_KEY, 'Accept': 'application/json' };
+
+  const [teamName, tbaMatchData] = await Promise.all([
+    fetch(`https://www.thebluealliance.com/api/v3/team/frc${team}/simple`, { headers: tbaHeaders })
+      .then(resp => resp.status === 200 ? resp.json() : null)
+      .then(data => data?.nickname ?? "")
+      .catch(() => ""),
+    fetch('https://www.thebluealliance.com/api/v3/event/2026capoh/matches', { headers: tbaHeaders })
+      .then(r => r.ok ? r.json() : [])
+      .catch(() => []),
+  ]);
+
+  const winAutoMap = {};
+  for (const match of tbaMatchData) {
+    if (match.comp_level !== 'qm' || !match.score_breakdown) continue;
+    const redAuto = match.score_breakdown.red?.totalAutoPoints ?? 0;
+    const blueAuto = match.score_breakdown.blue?.totalAutoPoints ?? 0;
+    for (const tk of (match.alliances?.red?.team_keys ?? [])) {
+      const t = parseInt(tk.replace('frc', ''), 10);
+      if (!winAutoMap[t]) winAutoMap[t] = {};
+      winAutoMap[t][match.match_number] = redAuto > blueAuto;
     }
-    return resp.json();
-  })
-  .then(data => {
-    if (!data || !data.nickname) { 
-      console.warn(`TBA API Warning: No nickname found for team ${team}`);
-      return "";  // Provide a default fallback
+    for (const tk of (match.alliances?.blue?.team_keys ?? [])) {
+      const t = parseInt(tk.replace('frc', ''), 10);
+      if (!winAutoMap[t]) winAutoMap[t] = {};
+      winAutoMap[t][match.match_number] = blueAuto > redAuto;
     }
-    return data.nickname;
-  });
+  }
+
+  for (const row of rows) {
+    row.winauto = winAutoMap[row.team]?.[row.match] ?? row.winauto;
+  }
     const matchesScouted = new Set(teamTable.map(row => row.match)).size;
 
     function standardDeviation(arr, key) {
