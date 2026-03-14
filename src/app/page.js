@@ -17,6 +17,7 @@ import ClimbCheckbox from "./form-components/ClimbCheckbox";
 import DefenseBreakdown from "./form-components/DefenseBreakdown";
 import ThreeOptionRadio from "./form-components/ThreeOptionRadio";
 import TwoOptionRadio from "./form-components/TwoOptionRadio";
+import FoulCounter from "./form-components/FoulCounter";
 
 export default function Home() {
   const [noShow, setNoShow] = useState(false);
@@ -410,6 +411,7 @@ console.log("page",matchType)
                <Checkbox visibleName={"Alliance Zone"} internalName={"defenselocationaz"}></Checkbox>
                <Checkbox visibleName={"Neutral Zone"} internalName={"defenselocationnz"}></Checkbox>
              </div>
+             <FoulCounter internalName={"fouls"}/>
            </div>
            <div className={styles.PostMatch}>
             <Header headerName={"Endgame"}/>
