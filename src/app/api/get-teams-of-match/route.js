@@ -17,7 +17,7 @@ export async function GET(request) {
   try {
     // 1) Try scouting database first (works for your recorded/simulated matches)
     const dbResult = await sql`
-      SELECT DISTINCT team FROM phd2026
+      SELECT DISTINCT team FROM sdd2026
       WHERE match = ${matchNum} AND (noshow = false OR noshow IS NULL)
       ORDER BY team
     `;

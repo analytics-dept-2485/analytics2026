@@ -9,7 +9,7 @@ export async function POST(request) {
 
   const requestBody = await request.json(); 
 
-  let data = await sql`SELECT * FROM phd2026;`;
+  let data = await sql`SELECT * FROM sdd2026;`;
 
   let rows = data.rows;
 
