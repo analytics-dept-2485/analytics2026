@@ -51,7 +51,6 @@ CREATE TABLE eventCompetitionYear (
    Defense INT, -- 0=weak, 1=harassment, 2=game changing (only set if PlayedDefense is true)
    
    -- Qualitative Ratings (0-5 scale, -1 for not rated)
-   Aggression INT DEFAULT -1,
    ClimbHazard INT DEFAULT -1,
    HopperCapacity INT DEFAULT -1,
    Maneuverability INT DEFAULT -1,
@@ -76,7 +75,7 @@ INSERT INTO eventCompetitionYear (
    DefenseLocationNZ, DefenseLocationAZ,
    EndClimbPosition, WideClimb,
    ShootingMechanism, Bump, Trench, StuckOnFuel, PlayedDefense, Defense,
-   Aggression, ClimbHazard, HopperCapacity, Maneuverability, DefenseEvasion,
+   ClimbHazard, HopperCapacity, Maneuverability, DefenseEvasion,
    ClimbSpeed, FuelSpeed, PassingQuantity, AutoDeclimbSpeed,
    GeneralComments, BreakdownComments, DefenseComments, FoulComments
 )
