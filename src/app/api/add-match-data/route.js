@@ -172,9 +172,9 @@ if (body.playeddefense) {
 
   // Qualitative Ratings (0-5 scale, -1 for not rated): default missing to -1
   const qualitativeFields = [
-    'aggression', 'climbhazard', 'hoppercapacity', 'maneuverability',
-    'durability', 'defenseevasion', 'climbspeed', 'fuelspeed',
-    'passingquantity', 'autodeclimbspeed', 'bumpspeed'
+    'climbhazard', 'hoppercapacity', 'maneuverability', 
+    'defenseevasion', 'climbspeed', 'fuelspeed',
+    'passingquantity', 'autodeclimbspeed'
   ];
   for (const field of qualitativeFields) {
     const v = Number(body[field]);

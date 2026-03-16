@@ -510,11 +510,6 @@ console.log("page",matchType)
                     internalName={"defenseevasion"}
                     description={"Defense Evasion Ability"}/>
                   <Qualitative
-                    visibleName={"Aggression"}
-                    internalName={"aggression"}
-                    description={"Aggression"}
-                    symbol={"ⵔ"}/>
-                  <Qualitative
                     visibleName={"Climb Hazard"}
                     internalName={"climbhazard"}
                     description={"Climb Hazard"}
