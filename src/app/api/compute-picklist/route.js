@@ -92,16 +92,16 @@ export async function POST(request) {
     last3EPAMap[team] = (typeof avgOfLast3 === 'number' && !isNaN(avgOfLast3)) ? avgOfLast3 : 0;
   }
 
-  const epaCapacityMap = {};
+  const trimmedepaMap = {};
   for (const team in matchGroupedByTeam) {
     const epaValues = Object.values(matchGroupedByTeam[team])
       .map(matchRows => matchRows.reduce((sum, row) => sum + calcEPA(row), 0) / matchRows.length);
     if (epaValues.length >= 3) {
       epaValues.sort((a, b) => a - b);
       const trimmed = epaValues.slice(1, -1);
-      epaCapacityMap[team] = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
+      trimmedepaMap[team] = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
     } else {
-      epaCapacityMap[team] = epaValues.length > 0
+      trimmedepaMap[team] = epaValues.length > 0
         ? epaValues.reduce((a, b) => a + b, 0) / epaValues.length
         : 0;
     }
@@ -198,8 +198,8 @@ export async function POST(request) {
       return score * (1 - foulRate);
     },
     consistency: d => teamConsistencyMap[d.team] ?? 0,
-    trimmedepa: d => epaCapacityMap[d.team] ?? 0,
-  }), select(['team', 'epa', 'last3epa', 'fuel', 'tower', 'passing', 'defense', 'auto', 'consistency', 'epaCapacity']));
+    trimmedepa: d => trimmedepaMap[d.team] ?? 0,
+  }), select(['team', 'epa', 'last3epa', 'fuel', 'tower', 'passing', 'defense', 'auto', 'consistency', 'trimmedepa']));
 
   const getTBARankings = async () => {
     try {
@@ -238,7 +238,7 @@ export async function POST(request) {
     defense: d => (maxes.defense && Number(maxes.defense)) ? d.defense / maxes.defense : 0,
     auto: d => (maxes.auto && Number(maxes.auto)) ? d.auto / maxes.auto : 0,
     consistency: d => (maxes.consistency && Number(maxes.consistency)) ? d.consistency / maxes.consistency : 0,
-    epaCapacity: d => (maxes.epaCapacity && Number(maxes.epaCapacity)) ? d.epaCapacity / maxes.epaCapacity : 0,
+    trimmedepa: d => (maxes.trimmedepa && Number(maxes.trimmedepa)) ? d.trimmedepa / maxes.trimmedepa : 0,
     score: d => requestBody.reduce((sum, [key, weight]) => {
       const value = d[key] ?? 0;
       const num = Number(value);
