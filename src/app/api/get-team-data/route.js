@@ -92,7 +92,7 @@ export async function GET(request) {
       .then(resp => resp.status === 200 ? resp.json() : null)
       .then(data => data?.nickname ?? "")
       .catch(() => ""),
-    fetch('https://www.thebluealliance.com/api/v3/event/2026capoh/matches', { headers: tbaHeaders })
+    fetch('https://www.thebluealliance.com/api/v3/event/2026casnd/matches', { headers: tbaHeaders })
       .then(r => r.ok ? r.json() : [])
       .catch(() => []),
   ]);

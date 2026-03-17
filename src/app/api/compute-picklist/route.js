@@ -198,12 +198,12 @@ export async function POST(request) {
       return score * (1 - foulRate);
     },
     consistency: d => teamConsistencyMap[d.team] ?? 0,
-    epaCapacity: d => epaCapacityMap[d.team] ?? 0,
+    trimmedepa: d => epaCapacityMap[d.team] ?? 0,
   }), select(['team', 'epa', 'last3epa', 'fuel', 'tower', 'passing', 'defense', 'auto', 'consistency', 'epaCapacity']));
 
   const getTBARankings = async () => {
     try {
-      const response = await fetch(`https://www.thebluealliance.com/api/v3/event/2026capoh/rankings`, {
+      const response = await fetch(`https://www.thebluealliance.com/api/v3/event/2026casnd/rankings`, {
         headers: {
           'X-TBA-Auth-Key': process.env.TBA_AUTH_KEY,
           'Accept': 'application/json'
