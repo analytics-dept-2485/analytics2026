@@ -100,8 +100,17 @@ export async function GET(request) {
   const winAutoMap = {};
   for (const match of tbaMatchData) {
     if (match.comp_level !== 'qm' || !match.score_breakdown) continue;
-    const redAuto = match.score_breakdown.red?.totalAutoPoints ?? 0;
-    const blueAuto = match.score_breakdown.blue?.totalAutoPoints ?? 0;
+    const redAuto = match.score_breakdown.red?.autoPoints
+  ?? match.score_breakdown.red?.totalAutoPoints
+  ?? match.score_breakdown.red?.auto_points
+  ?? 0;
+const blueAuto = match.score_breakdown.blue?.autoPoints
+  ?? match.score_breakdown.blue?.totalAutoPoints
+  ?? match.score_breakdown.blue?.auto_points
+  ?? 0;
+
+console.log(`Match ${match.match_number} → Red Auto: ${redAuto}, Blue Auto: ${blueAuto}`);
+console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}));
     for (const tk of (match.alliances?.red?.team_keys ?? [])) {
       const t = parseInt(tk.replace('frc', ''), 10);
       if (!winAutoMap[t]) winAutoMap[t] = {};
@@ -115,7 +124,7 @@ export async function GET(request) {
   }
 
   for (const row of rows) {
-    row.winauto = winAutoMap[row.team]?.[row.match] ?? row.winauto;
+    row.winauto = winAutoMap[Number(row.team)]?.[Number(row.match)] ?? row.winauto;
   }
     const matchesScouted = new Set(teamTable.map(row => row.match)).size;
 
