@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { sql } from '@vercel/postgres';
 import { tidy, mutate, arrange, desc, mean, select, summarizeAll, summarize, max, groupBy } from '@tidyjs/tidy';
 import { calcAuto, calcTele, calcEnd, calcEPA } from "@/util/calculations";
+import { avgManeuverabilityByTeam, blendDefenseMapWithManeuver } from "@/util/picklistDefenseBlend";
+
+/** Per-scout foul total for defense penalty: major + minor (same scale as legacy single fouls count). */
+function foulScalar(row) {
+  const major = Math.abs(Number(row.majorfouls));
+  const minor = Math.abs(Number(row.minorfouls));
+  return (Number.isFinite(major) ? major : 0) + (Number.isFinite(minor) ? minor : 0);
+}
 
 export const dynamic = 'force-dynamic'; 
 
@@ -9,7 +17,7 @@ export async function POST(request) {
 
   const requestBody = await request.json(); 
 
-  let data = await sql`SELECT * FROM sdd2026;`;
+  let data = await sql`SELECT * FROM dcmp2026;`;
 
   let rows = data.rows;
 
@@ -197,8 +205,7 @@ export async function POST(request) {
       entry.defenseTypes.push(defenseType);
     }
 
-    const f = Number(row.fouls);
-    entry.foulsSum += Number.isFinite(f) ? Math.abs(f) : 0;
+    entry.foulsSum += foulScalar(row);
     entry.foulsCount += 1;
   });
 
@@ -235,6 +242,9 @@ export async function POST(request) {
     teamDefenseMap[team] = count > 0 ? sum / count : 0;
   }
 
+  const maneuverAvgByTeam = avgManeuverabilityByTeam(rows);
+  const teamDefenseBlendedMap = blendDefenseMapWithManeuver(teamDefenseMap, maneuverAvgByTeam);
+
   teamTable = tidy(teamTable, mutate({
     auto: d => calcAuto(d),
     epa: d => calcEPA(d),
@@ -242,7 +252,7 @@ export async function POST(request) {
     fuel: d => teamFuelAvg[d.team] ?? 0,
     tower: d => teamTowerAvg[d.team] ?? 0,
     passing: d => teamPassingPct[d.team] ?? 0,
-    defense: d => teamDefenseMap[d.team] ?? 0,
+    defense: d => teamDefenseBlendedMap[d.team] ?? 0,
     consistency: d => teamConsistencyMap[d.team] ?? 0,
     trimmedepa: d => trimmedepaMap[d.team] ?? 0,
   }), select(['team', 'epa', 'last3epa', 'fuel', 'tower', 'passing', 'defense', 'auto', 'consistency', 'trimmedepa']));

@@ -1,0 +1,25 @@
+.table,
+.table td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+.table {
+  width: 350px;
+  align-self: center;
+}
+
+.table tbody tr :first-child {
+  width: 72px;
+  text-align: center;
+  vertical-align: top;
+}
+
+.valueCell {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.matchLine + .matchLine {
+  margin-top: 6px;
+}

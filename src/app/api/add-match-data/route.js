@@ -58,7 +58,7 @@ export async function POST(req) {
   if (body.noshow) {
     console.log("no show!");
     let resp = await sql`
-      INSERT INTO sdd2026 (ScoutName, ScoutTeam, Team, Match, MatchType, NoShow)
+      INSERT INTO dcmp2026 (ScoutName, ScoutTeam, Team, Match, MatchType, NoShow)
       VALUES (${body.scoutname}, ${body.scoutteam}, ${body.team}, ${adjustedMatch}, ${body.matchType}, ${body.noshow})
     `;
     return NextResponse.json({ message: "Success!" }, { status: 201 });
@@ -134,7 +134,8 @@ export async function POST(req) {
   if (!_.isNumber(body.shootingmechanism) || (body.shootingmechanism !== 0 && body.shootingmechanism !== 1)) {
     body.shootingmechanism = Number(body.shootingmechanism) === 1 ? 1 : 0;
   }
-  body.fouls = Math.abs(Number(body.fouls)) || 0;
+  body.majorfouls = Math.abs(Number(body.majorfouls)) || 0;
+  body.minorfouls = Math.abs(Number(body.minorfouls)) || 0;
   const postmatchBooleans = ['bump', 'trench', 'stuckonfuel', 'stuckonbump', 'playeddefense'];
   for (const key of postmatchBooleans) {
     if (!_.isBoolean(body[key])) body[key] = false;
@@ -150,7 +151,8 @@ export async function POST(req) {
       _.isBoolean(body.stuckonfuel) &&
       _.isBoolean(body.stuckonbump) &&
       _.isBoolean(body.playeddefense) &&
-      _.isNumber(body.fouls)// && body.fouls >= 0
+      _.isNumber(body.majorfouls) &&
+      _.isNumber(body.minorfouls)
     )
   ) {
     return NextResponse.json({ message: "Invalid Postmatch Data!" }, { status: 400 });
@@ -194,12 +196,12 @@ if (body.playeddefense) {
 
   // Insert Data into Database
   let resp = await sql`
-    INSERT INTO sdd2026 (
+    INSERT INTO dcmp2026 (
       scoutname, scoutteam, team, match, matchtype, noshow,
       autoclimb, autoclimbposition, autofuel,
       intakeground, intakeoutpost, passingbulldozer, passingshooter, passingdump, shootwhilemove, telefuel,
       defenselocationaz, defenselocationnz,endclimbposition, wideclimb,
-      shootingmechanism, bump, trench, stuckonfuel, stuckonbump, fouls, playeddefense, defense, 
+      shootingmechanism, bump, trench, stuckonfuel, stuckonbump, majorfouls, minorfouls, playeddefense, defense, 
       climbhazard, hoppercapacity, maneuverability, defenseevasion,
       climbspeed, fuelspeed, passingquantity, autodeclimbspeed,
       generalcomments, breakdowncomments, defensecomments, foulcomments
@@ -210,7 +212,7 @@ if (body.playeddefense) {
       ${body.intakeground}, ${body.intakeoutpost}, ${body.passingbulldozer}, ${body.passingshooter}, ${body.passingdump}, ${body.shootwhilemove}, ${body.telefuel},
       ${body.defenselocationaz}, ${body.defenselocationnz},
       ${body.endclimbposition}, ${body.wideclimb},
-      ${body.shootingmechanism}, ${body.bump}, ${body.trench}, ${body.stuckonfuel}, ${body.stuckonbump}, ${body.fouls}, ${body.playeddefense}, ${body.defense},
+      ${body.shootingmechanism}, ${body.bump}, ${body.trench}, ${body.stuckonfuel}, ${body.stuckonbump}, ${body.majorfouls}, ${body.minorfouls}, ${body.playeddefense}, ${body.defense},
       ${body.climbhazard}, ${body.hoppercapacity}, ${body.maneuverability}, ${body.defenseevasion},
       ${body.climbspeed}, ${body.fuelspeed}, ${body.passingquantity}, ${body.autodeclimbspeed},
       ${body.generalcomments}, ${body.breakdowncomments || null}, ${body.defensecomments || null}, ${body.foulcomments || null}
