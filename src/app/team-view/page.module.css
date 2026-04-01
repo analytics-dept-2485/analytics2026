@@ -180,11 +180,13 @@
  
  
  .epaBox::before {
-    content: "Avg EPA";
+    content: "Avg scout EPA\A(this robot)";
+    white-space: pre;
+    text-align: center;
     display: block;
     position: relative;
     top: 0;
-    width:80px;
+    width: 140px;
     left: 50%;
     transform: translate(-50%, calc(-50% - 10px));
     border: 1px solid black;
@@ -193,17 +195,20 @@
     border-radius: 5px;
     padding: 5px;
     margin-bottom: -20px;
-    font-size: 19px;
+    font-size: 15px;
     font-weight: 800;
+    line-height: 1.15;
  }
  
  
  .Last3EpaBox::before {
-    content: "Last 3 Epa";
+    content: "Last 3 scout EPA\A(this robot)";
+    white-space: pre;
+    text-align: center;
     display: block;
     position: relative;
     top: 0;
-    width: 80px;
+    width: 150px;
     left: 50%;
     transform: translate(-50%, calc(-50% - 10px));
     border: 1px solid black;
@@ -212,8 +217,9 @@
     border-radius: 5px;
     padding: 5px;
     margin-bottom: -20px;
-    font-size: 19px;
+    font-size: 15px;
     font-weight: 800;
+    line-height: 1.15;
  }
  
  

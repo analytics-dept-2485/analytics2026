@@ -78,9 +78,6 @@ function TeamView() {
        epaOverTime: Array.isArray(api.epaOverTime) ? api.epaOverTime.map((d) => ({ ...d, epa: round10(d.epa) })) : [],
        autoOverTime: Array.isArray(api.autoOverTime) ? api.autoOverTime.map((d) => ({ ...d, auto: round10(d.auto) })) : [],
        teleOverTime: Array.isArray(api.teleOverTime) ? api.teleOverTime.map((d) => ({ ...d, tele: round10(d.tele) })) : [],
-       wonEPA: api.wonEPA ?? [],
-       wonAuto: api.auto?.winAuto != null ? [api.auto.winAuto] : [],
-       wonTele: api.wonTele ?? [],
        consistency: round10(api.consistency),
        stuckOnFuel: round10(api.stuckOnFuel ?? api.stuckonfuel),
        stuckOnBump: round10(api.stuckOnBump ?? api.stuckonbump),
@@ -358,7 +355,6 @@ function TeamView() {
                    color={Colors[0][3]} 
                    label={"epa"} 
                    teamNumber={data.team}
-                   wonEPA={data.wonEPA}
                    />
                  </div>
                <div className={styles.valueBoxes}>
@@ -435,7 +431,6 @@ function TeamView() {
                color={Colors[1][3]}
                label={"auto"}
                teamNumber={data.team}
-               wonAuto={data.wonAuto}
              />
          </div>
       <div className={styles.autoBox}>
@@ -460,7 +455,6 @@ function TeamView() {
                color={Colors[2][3]}
                label={"tele"}
                teamNumber={data.team}
-               wonTele={data.wonTele}
              />
            </div>
       

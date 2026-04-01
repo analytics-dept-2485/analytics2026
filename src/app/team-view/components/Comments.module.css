@@ -10,3 +10,11 @@
     border: 1px solid black;
     border-collapse: collapse;
 }
+
+.commentBody {
+    white-space: pre-line;
+    text-align: left;
+    padding: 8px;
+    font-size: 14px;
+    line-height: 1.35;
+}

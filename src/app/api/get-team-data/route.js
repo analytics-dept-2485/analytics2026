@@ -69,14 +69,6 @@ export async function GET(request) {
     return mean(index);
   }
 
-  let teamTable = tidy(rows, mutate({
-    auto: rec => calcAuto(rec),
-    tele: rec => calcTele(rec),
-    end: rec => calcEnd(rec),
-    epa: rec => calcEPA(rec) // Ensure EPA is using the correct calculation
-}));
-
-
   function rowsToArray(x, index) {
     return x.map(row => row[index]).filter(val => val != null);
   }
@@ -86,49 +78,86 @@ export async function GET(request) {
   }
 
   const tbaHeaders = { 'X-TBA-Auth-Key': process.env.TBA_AUTH_KEY, 'Accept': 'application/json' };
+  const TBA_EVENT_KEY = '2026casnd';
 
   const [teamName, tbaMatchData] = await Promise.all([
     fetch(`https://www.thebluealliance.com/api/v3/team/frc${team}/simple`, { headers: tbaHeaders })
       .then(resp => resp.status === 200 ? resp.json() : null)
       .then(data => data?.nickname ?? "")
       .catch(() => ""),
-    fetch('https://www.thebluealliance.com/api/v3/event/2026casnd/matches', { headers: tbaHeaders })
+    fetch(`https://www.thebluealliance.com/api/v3/event/${TBA_EVENT_KEY}/matches`, { headers: tbaHeaders })
       .then(r => r.ok ? r.json() : [])
       .catch(() => []),
   ]);
 
+  /** team -> { [tbaMatchKey]: wonAuto } */
   const winAutoMap = {};
   for (const match of tbaMatchData) {
-    if (match.comp_level !== 'qm' || !match.score_breakdown) continue;
+    if (!match.key || !match.score_breakdown) continue;
     const redAuto = match.score_breakdown.red?.autoPoints
-  ?? match.score_breakdown.red?.totalAutoPoints
-  ?? match.score_breakdown.red?.auto_points
-  ?? 0;
-const blueAuto = match.score_breakdown.blue?.autoPoints
-  ?? match.score_breakdown.blue?.totalAutoPoints
-  ?? match.score_breakdown.blue?.auto_points
-  ?? 0;
-
-console.log(`Match ${match.match_number} → Red Auto: ${redAuto}, Blue Auto: ${blueAuto}`);
-console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}));
+      ?? match.score_breakdown.red?.totalAutoPoints
+      ?? match.score_breakdown.red?.auto_points
+      ?? 0;
+    const blueAuto = match.score_breakdown.blue?.autoPoints
+      ?? match.score_breakdown.blue?.totalAutoPoints
+      ?? match.score_breakdown.blue?.auto_points
+      ?? 0;
+    const redWin = redAuto > blueAuto;
+    const blueWin = blueAuto > redAuto;
     for (const tk of (match.alliances?.red?.team_keys ?? [])) {
       const t = parseInt(tk.replace('frc', ''), 10);
       if (!winAutoMap[t]) winAutoMap[t] = {};
-      winAutoMap[t][match.match_number] = redAuto > blueAuto;
+      winAutoMap[t][match.key] = redWin;
     }
     for (const tk of (match.alliances?.blue?.team_keys ?? [])) {
       const t = parseInt(tk.replace('frc', ''), 10);
       if (!winAutoMap[t]) winAutoMap[t] = {};
-      winAutoMap[t][match.match_number] = blueAuto > redAuto;
+      winAutoMap[t][match.key] = blueWin;
     }
   }
 
-  for (const row of rows) {
-    row.winauto = winAutoMap[Number(row.team)]?.[Number(row.match)] ?? row.winauto;
+  function tbaMatchKeyForScoutRow(row) {
+    const m = Number(row.match);
+    const mt = Number(row.matchtype ?? row.matchType);
+    if (!Number.isFinite(m)) return null;
+    if (!Number.isFinite(mt)) return `${TBA_EVENT_KEY}_qm${m}`;
+    if (mt === 2) return `${TBA_EVENT_KEY}_qm${m}`;
+    if (mt === 1) return `${TBA_EVENT_KEY}_qm${m + 50}`;
+    if (mt === 0) return `${TBA_EVENT_KEY}_qm${m + 100}`;
+    if (mt === 3) {
+      const userElim = m - 150;
+      if (userElim <= 0) return null;
+      const cands = tbaMatchData.filter(
+        (x) =>
+          x.comp_level &&
+          x.comp_level !== 'qm' &&
+          x.match_number === userElim &&
+          x.score_breakdown &&
+          x.key
+      );
+      if (cands.length === 1) return cands[0].key;
+      return null;
+    }
+    return `${TBA_EVENT_KEY}_qm${m}`;
   }
-    const matchesScouted = new Set(teamTable.map(row => row.match)).size;
 
-    function standardDeviation(arr, key) {
+  for (const row of rows) {
+    const teamNum = Number(row.team);
+    const key = tbaMatchKeyForScoutRow(row);
+    const fromTba = key != null ? winAutoMap[teamNum]?.[key] : undefined;
+    if (fromTba !== undefined) row.winauto = fromTba;
+  }
+
+  let teamTable = tidy(rows, mutate({
+    auto: rec => calcAuto(rec),
+    tele: rec => calcTele(rec),
+    end: rec => calcEnd(rec),
+    epa: rec => calcEPA(rec) // Ensure EPA is using the correct calculation
+}));
+
+  const matchesScouted = new Set(teamTable.map(row => row.match)).size;
+
+  function standardDeviation(arr, key) {
       const values = arr.map(row => row[key]).filter(v => typeof v === 'number' && !isNaN(v));
     
       if (values.length === 0) return 0;
@@ -136,9 +165,6 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
       const avg = sum / values.length;
       const variance = values.reduce((acc, val) => acc + Math.pow(val - avg, 2), 0) / values.length;
       const stdDev = Math.sqrt(variance);
-    
-      console.log(`📏 Manual StdDev Debug → values: [${values.join(', ')}] | Mean: ${avg} | Variance: ${variance} | StdDev: ${stdDev}`);
-    
       return stdDev;
     }
     
@@ -415,10 +441,10 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
             }
           });
           
-          const result = Object.entries(commentsByMatch).map(([match, comments]) => 
-            ` *Match ${match}: ${comments.join(' -- ')}*`
-          );
-          
+          const result = Object.entries(commentsByMatch)
+            .sort((a, b) => Number(a[0]) - Number(b[0]))
+            .map(([match, comments]) => `Match ${match}: ${comments.join(', ')}`);
+
           return result.length > 0 ? result : [];
         },
         
@@ -433,10 +459,10 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
             }
           });
           
-          const result = Object.entries(commentsByMatch).map(([match, comments]) => 
-            ` *Match ${match}: ${comments.join(' -- ')}*`
-          );
-          
+          const result = Object.entries(commentsByMatch)
+            .sort((a, b) => Number(a[0]) - Number(b[0]))
+            .map(([match, comments]) => `Match ${match}: ${comments.join(', ')}`);
+
           return result.length > 0 ? result : [];
         },
 
@@ -451,9 +477,9 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
             }
           });
 
-          const result = Object.entries(commentsByMatch).map(([match, comments]) =>
-            ` *Match ${match}: ${comments.join(' -- ')}*`
-          );
+          const result = Object.entries(commentsByMatch)
+            .sort((a, b) => Number(a[0]) - Number(b[0]))
+            .map(([match, comments]) => `Match ${match}: ${comments.join(', ')}`);
 
           return result.length > 0 ? result : [];
         },
@@ -910,9 +936,6 @@ let processedTeleOverTime = aggregateByMatch(returnObject[0].teleOverTime);
 returnObject[0].epaOverTime = processedEPAOverTime;
 returnObject[0].autoOverTime = processedAutoOverTime;
 returnObject[0].teleOverTime = processedTeleOverTime;
-
-// Add debugging logs
-console.log("Backend End Placement:", returnObject[0].endPlacement);
 
 // Just one return statement
 return NextResponse.json(returnObject[0], { status: 200 });
