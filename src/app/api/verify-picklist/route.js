@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { sql } from '@vercel/postgres';
 import { tidy, mutate, select, summarizeAll, groupBy, summarize } from '@tidyjs/tidy';
 import { calcAuto, calcEPA } from "@/util/calculations";
+import { avgManeuverabilityByTeam, blendDefenseMapWithManeuver } from "@/util/picklistDefenseBlend";
+
+/** Per-scout foul total for defense penalty: major + minor (matches compute-picklist). */
+function foulScalar(row) {
+  const major = Math.abs(Number(row.majorfouls));
+  const minor = Math.abs(Number(row.minorfouls));
+  return (Number.isFinite(major) ? major : 0) + (Number.isFinite(minor) ? minor : 0);
+}
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { rows: rawRows } = await sql`SELECT * FROM sdd2026;`;
+    const { rows: rawRows } = await sql`SELECT * FROM dcmp2026;`;
     const rows = rawRows.filter(
       (row) => !row.noshow && row.team != null && row.team !== '' && Number(row.team) > 0
     );
@@ -161,8 +169,7 @@ export async function GET() {
         entry.defenseTypes.push(defenseType);
       }
 
-      const f = Number(row.fouls);
-      entry.foulsSum += Number.isFinite(f) ? Math.abs(f) : 0;
+      entry.foulsSum += foulScalar(row);
       entry.foulsCount += 1;
     });
 
@@ -198,6 +205,9 @@ export async function GET() {
       teamDefenseMap[team] = count > 0 ? sum / count : 0;
     }
 
+    const maneuverAvgByTeam = avgManeuverabilityByTeam(rows);
+    const teamDefenseBlendedMap = blendDefenseMapWithManeuver(teamDefenseMap, maneuverAvgByTeam);
+
     teamTable = tidy(teamTable, mutate({
       auto: (d) => calcAuto(d),
       epa: (d) => calcEPA(d),
@@ -205,7 +215,7 @@ export async function GET() {
       fuel: (d) => teamFuelAvg[d.team] ?? 0,
       tower: (d) => teamTowerAvg[d.team] ?? 0,
       passing: (d) => teamPassingPct[d.team] ?? 0,
-      defense: (d) => teamDefenseMap[d.team] ?? 0,
+      defense: (d) => teamDefenseBlendedMap[d.team] ?? 0,
       consistency: (d) => teamConsistencyMap[d.team] ?? 0,
     }), select(['team', 'epa', 'last3epa', 'fuel', 'tower', 'passing', 'defense', 'auto', 'consistency']));
 
