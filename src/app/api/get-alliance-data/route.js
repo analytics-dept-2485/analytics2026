@@ -12,12 +12,23 @@ const avgNonNegative = (values) => {
     : -1;
 };
 
+function meanAndMedianOfCounts(arr) {
+  if (!arr || arr.length === 0) return { mean: 0, median: 0 };
+  const mean = Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 === 0
+    ? Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 10) / 10
+    : sorted[mid];
+  return { mean, median };
+}
+
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request?.url ?? '', 'http://localhost');
     const matchParam = searchParams.get('match');
-    const allRows = (await sql`SELECT * FROM sdd2026;`).rows;
+    const allRows = (await sql`SELECT * FROM dcmp2026;`).rows;
     const matchOnly = matchParam != null && matchParam !== '' && !isNaN(parseInt(matchParam, 10));
     // Always use all rows to build team data (so we can compute last-3 for every team)
     let rows = allRows;
@@ -124,7 +135,8 @@ function initializeTeamData(row, auto, tele, end, frcAPITeamInfo) {
     endgame: createEndgameData(row.endclimbposition),
     // defense: 0=weak, 1=harassment, 2=game changing (only count when played defense)
     defense: countDefenseRow(row),
-    foulsArray: [Math.abs(Number(row.fouls) || 0)],
+    majorFoulsArray: [Math.abs(Number(row.majorfouls) || 0)],
+    minorFoulsArray: [Math.abs(Number(row.minorfouls) || 0)],
     qualitative: {
       climbhazard: row.climbhazard,
       hoppercapacity: row.hoppercapacity,
@@ -180,7 +192,8 @@ function accumulateTeamData(teamData, row, auto, tele, end) {
   teamData.defense.harassment += dCount.harassment;
   teamData.defense.gameChanging += dCount.gameChanging;
 
-  teamData.foulsArray.push(Math.abs(Number(row.fouls) || 0));
+  teamData.majorFoulsArray.push(Math.abs(Number(row.majorfouls) || 0));
+  teamData.minorFoulsArray.push(Math.abs(Number(row.minorfouls) || 0));
 
   // Accumulate qualitative ratings (sum them for averaging later)
   teamData.qualitative.climbhazard += row.climbhazard || 0;
@@ -263,20 +276,14 @@ function calculateAverages(responseObject, rows) {
         }
       : { weak: 0, harassment: 0, gameChanging: 0 };
 
-    // Calculate foul stats (mean and median)
-    const fouls = teamData.foulsArray || [];
-    if (fouls.length > 0) {
-      teamData.foulsMean = Math.round((fouls.reduce((a, b) => a + b, 0) / fouls.length) * 10) / 10;
-      const sorted = [...fouls].sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      teamData.foulsMedian = sorted.length % 2 === 0
-        ? Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 10) / 10
-        : sorted[mid];
-    } else {
-      teamData.foulsMean = 0;
-      teamData.foulsMedian = 0;
-    }
-    delete teamData.foulsArray;
+    const majorFm = meanAndMedianOfCounts(teamData.majorFoulsArray || []);
+    const minorFm = meanAndMedianOfCounts(teamData.minorFoulsArray || []);
+    teamData.majorFoulsMean = majorFm.mean;
+    teamData.majorFoulsMedian = majorFm.median;
+    teamData.minorFoulsMean = minorFm.mean;
+    teamData.minorFoulsMedian = minorFm.median;
+    delete teamData.majorFoulsArray;
+    delete teamData.minorFoulsArray;
 
     // Calculate qualitative ratings (average of non-negative values, -1 for not rated)
     const teamRows = rows.filter(row => row.team === parseInt(team) && !row.noshow);
@@ -368,19 +375,19 @@ function calculateLast3Charts(responseObject, rows) {
       responseObject[team].last3Endgame = { None: 100, L1: 0, L2: 0, L3: 0 };
       responseObject[team].last3Defense = { weak: 0, harassment: 0, gameChanging: 0 };
       responseObject[team].last3Qualitative = null;
-      responseObject[team].last3Fouls = { mean: 0, median: 0 };
+      responseObject[team].last3Fouls = {
+        major: { mean: 0, median: 0 },
+        minor: { mean: 0, median: 0 },
+      };
       return;
     }
 
-    // Fouls: mean and median over last 3 matches
-    const foulValues = last3Rows.map(r => Math.abs(Number(r.fouls) || 0));
-    const foulsMean = Math.round((foulValues.reduce((a, b) => a + b, 0) / foulValues.length) * 10) / 10;
-    const sortedFouls = [...foulValues].sort((a, b) => a - b);
-    const foulMid = Math.floor(sortedFouls.length / 2);
-    const foulsMedian = sortedFouls.length % 2 === 0
-      ? Math.round(((sortedFouls[foulMid - 1] + sortedFouls[foulMid]) / 2) * 10) / 10
-      : sortedFouls[foulMid];
-    responseObject[team].last3Fouls = { mean: foulsMean, median: foulsMedian };
+    const majorVals = last3Rows.map((r) => Math.abs(Number(r.majorfouls) || 0));
+    const minorVals = last3Rows.map((r) => Math.abs(Number(r.minorfouls) || 0));
+    responseObject[team].last3Fouls = {
+      major: meanAndMedianOfCounts(majorVals),
+      minor: meanAndMedianOfCounts(minorVals),
+    };
 
     // Passing: % of rows (matches) where each type was used
     const dump = last3Rows.filter(r => r.passingdump).length;

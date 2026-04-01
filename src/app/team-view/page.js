@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import VBox from "./components/VBox";
-import HBox from "./components/HBox";
+import ScoutsByMatch from "./components/ScoutsByMatch";
 import Comments from "./components/Comments";
 import TwoByTwo from "./components/TwoByTwo";
 import ThreeByThree from "./components/ThreeByThree";
@@ -89,14 +89,40 @@ function TeamView() {
        noShow: round10((() => { const n = Number(api.noShow) ?? 0; return n <= 1 ? n * 100 : n; })()),
        breakdown: round10(api.breakdown),
        matchesScouted: Number(api.matchesScouted) ?? 0,
-       scouts: (() => {
-         if (!Array.isArray(api.scouts) || api.scouts.length === 0) return "";
-         const names = [];
-         api.scouts.forEach((entry) => {
-           const s = String(entry).replace(/^\s*\*Match \d+:\s*/i, "").replace(/\*\s*$/, "").trim();
-           if (s) s.split(/\s*,\s*/).forEach((name) => names.push(name.trim()));
+       scoutsByMatch: (() => {
+         const raw = api.scouts;
+         if (!Array.isArray(raw) || raw.length === 0) return [];
+         const first = raw[0];
+         if (
+           first &&
+           typeof first === "object" &&
+           first !== null &&
+           "match" in first &&
+           Array.isArray(first.names)
+         ) {
+           return raw
+             .map((g) => ({
+               match: Number(g.match),
+               names: g.names.filter(Boolean).map(String),
+             }))
+             .filter((g) => Number.isFinite(g.match))
+             .sort((a, b) => a.match - b.match);
+         }
+         const legacy = [];
+         raw.forEach((entry) => {
+           const s = String(entry);
+           const m = s.match(/^\s*\*Match\s+(\d+)\s*:\s*(.+?)\s*\*\s*$/is);
+           if (m) {
+             legacy.push({
+               match: Number(m[1]),
+               names: m[2]
+                 .split(/\s*,\s*/)
+                 .map((n) => n.trim())
+                 .filter(Boolean),
+             });
+           }
          });
-         return names.filter(Boolean).join(", ");
+         return legacy.sort((a, b) => a.match - b.match);
        })(),
        generalComments: Array.isArray(api.generalComments) ? api.generalComments : [],
        breakdownComments: Array.isArray(api.breakdownComments) ? api.breakdownComments : [],
@@ -143,8 +169,10 @@ function TeamView() {
        bumpTrav: Boolean(api.bump),
        trenchTrav: Boolean(api.trench),
        wideClimb: Boolean(api.wideClimb ?? api.wideclimb),
-      meanFouls: round10(api.meanFouls),
-      medianFouls: round10(api.medianFouls),
+      meanMajorFouls: round10(api.meanMajorFouls),
+      medianMajorFouls: round10(api.medianMajorFouls),
+      meanMinorFouls: round10(api.meanMinorFouls),
+      medianMinorFouls: round10(api.medianMinorFouls),
      };
    }
 
@@ -384,7 +412,12 @@ function TeamView() {
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Defense Comments"} value={data.defenseComments} />
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Foul Elaboration"} value={data.foulComments} />
                  </div>
-                 <HBox color1={Colors[0][1]} color2={Colors[0][0]} title={"Scouts"} value={data.scouts} />
+                 <ScoutsByMatch
+                   color1={Colors[0][1]}
+                   color2={Colors[0][0]}
+                   title={"Scouts"}
+                   groups={data.scoutsByMatch}
+                 />
                </div>
          </div>
 
@@ -484,19 +517,27 @@ function TeamView() {
             </div>
 
             <div className={styles.hBox2}>
-            <table className={styles.horizontalTable}> 
+            <div className={styles.foulsTableWrap}>
+            <table className={styles.horizontalTable}>
                 <tbody>
                   <tr>
-                    <td style={{backgroundColor: Colors[2][2]}} rowSpan="2">Fouls</td>
-                    <td style={{backgroundColor: Colors[2][1]}}>Median</td>
-                    <td style={{backgroundColor: Colors[2][1]}}>Mean</td>
+                    <td style={{ backgroundColor: Colors[2][1] }} aria-hidden="true" />
+                    <td style={{ backgroundColor: Colors[2][1] }}>Mn. Fouls</td>
+                    <td style={{ backgroundColor: Colors[2][1] }}>Mj. Fouls</td>
                   </tr>
                   <tr>
-                    <td style={{backgroundColor: Colors[2][0]}}>{data.medianFouls}</td>
-                    <td style={{backgroundColor: Colors[2][0]}}>{data.meanFouls}</td>
+                    <td style={{ backgroundColor: Colors[2][1] }}>Median</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.medianMinorFouls}</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.medianMajorFouls}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ backgroundColor: Colors[2][1] }}>Mean</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.meanMinorFouls}</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.meanMajorFouls}</td>
                   </tr>
                 </tbody>
             </table>
+            </div>
             <table className={styles.horizontalDTable}> 
               <tbody>
                 <tr>
@@ -534,19 +575,27 @@ function TeamView() {
               <div className={styles.vDefBox1}>
                 <div className={styles.vBox3}>
                 <VBox color1={Colors[2][2]} color2={Colors[2][0]} color3={Colors[2][2]} title={"Median Fuel"} value={Math.round(10*data.teleMedianFuel)/10} />
-                <table className={styles.horizontalTable}> 
+                <div className={styles.foulsTableWrap}>
+                <table className={styles.horizontalTable}>
                 <tbody>
                   <tr>
-                    <td style={{backgroundColor: Colors[2][2]}} rowSpan="2">Fouls</td>
-                    <td style={{backgroundColor: Colors[2][1]}}>Median</td>
-                    <td style={{backgroundColor: Colors[2][1]}}>Mean</td>
+                    <td style={{ backgroundColor: Colors[2][1] }} aria-hidden="true" />
+                    <td style={{ backgroundColor: Colors[2][1] }}>Mn. Fouls</td>
+                    <td style={{ backgroundColor: Colors[2][1] }}>Mj. Fouls</td>
                   </tr>
                   <tr>
-                    <td style={{backgroundColor: Colors[2][0]}}>{data.medianFouls}</td>
-                    <td style={{backgroundColor: Colors[2][0]}}>{data.meanFouls}</td>
+                    <td style={{ backgroundColor: Colors[2][1] }}>Median</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.medianMinorFouls}</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.medianMajorFouls}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ backgroundColor: Colors[2][1] }}>Mean</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.meanMinorFouls}</td>
+                    <td style={{ backgroundColor: Colors[2][0] }}>{data.meanMajorFouls}</td>
                   </tr>
                 </tbody>
                 </table>
+                </div>
                 </div>
                 </div>
 

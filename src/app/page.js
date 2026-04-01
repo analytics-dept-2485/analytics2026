@@ -210,7 +210,10 @@ if (playedDefenseValue && defenseType) {
 
     data.bump = data.bump === true;
     data.trench = data.trench === true;
-    data.fouls = Number(data.fouls) || 0;
+    data.majorfouls = Math.abs(Number(data["fouls-major"])) || 0;
+    data.minorfouls = Math.abs(Number(data["fouls-minor"])) || 0;
+    delete data["fouls-major"];
+    delete data["fouls-minor"];
     data.foulcomments = data.foulcomments != null && data.foulcomments !== undefined ? String(data.foulcomments).trim() : "";
 
     data.breakdown = undefined;

@@ -15,7 +15,7 @@ export async function GET(request) {
   }
 
   // Fetch team data from database
-  let data = await sql`SELECT * FROM sdd2026 WHERE team = ${team};`;
+  let data = await sql`SELECT * FROM dcmp2026 WHERE team = ${team};`;
   const rows = data.rows;
 
   if (rows.length === 0) {
@@ -333,7 +333,7 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
         },
         //Add TBA to pull win/lose auto
         // Extract match and performance metrics (include winauto for win/loss dots on all over-time charts)
-        epaOverTime: arr => tidy(arr, select(['epa', 'match', 'winauto', 'fouls'])),
+        epaOverTime: arr => tidy(arr, select(['epa', 'match', 'winauto', 'majorfouls', 'minorfouls'])),
         autoOverTime: arr => tidy(arr, select(['match', 'auto', 'winauto'])),
         teleOverTime: arr => tidy(arr, select(['match', 'tele', 'winauto'])),
       
@@ -366,18 +366,10 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
           const stuck = arr.filter(row => row.stuckonbump === true).length;
           return total > 0 ? (stuck / total) * 100 : 0;
         },
-        meanFouls: arr => {
-          const foulValues = arr.map(row => Math.abs(Number(row.fouls) || 0));
-          return foulValues.length > 0 ? foulValues.reduce((a, b) => a + b, 0) / foulValues.length : 0;
-        },
-        medianFouls: arr => {
-          const foulValues = arr.map(row => Math.abs(Number(row.fouls) || 0)).sort((a, b) => a - b);
-          if (foulValues.length === 0) return 0;
-          const mid = Math.floor(foulValues.length / 2);
-          return foulValues.length % 2 === 0
-            ? (foulValues[mid - 1] + foulValues[mid]) / 2
-            : foulValues[mid];
-        },
+        meanMajorFouls: arr => meanAndMedianAcrossMatches(arr, 'majorfouls').mean,
+        medianMajorFouls: arr => meanAndMedianAcrossMatches(arr, 'majorfouls').median,
+        meanMinorFouls: arr => meanAndMedianAcrossMatches(arr, 'minorfouls').mean,
+        medianMinorFouls: arr => meanAndMedianAcrossMatches(arr, 'minorfouls').median,
     
         breakdown: arr => {
           const uniqueMatches = new Set(arr.map(row => row.match));
@@ -408,12 +400,9 @@ console.log("Red breakdown keys:", Object.keys(match.score_breakdown.red ?? {}))
               }
             }
           });
-          
-          const result = Object.entries(scoutsByMatch).map(([match, scouts]) => 
-            ` *Match ${match}: ${scouts.join(', ')}*`
-          );
-          
-          return result.length > 0 ? result : [];
+          return Object.entries(scoutsByMatch)
+            .map(([match, names]) => ({ match: Number(match), names: [...names] }))
+            .sort((a, b) => a.match - b.match);
         },
         generalComments: arr => {
           const commentsByMatch = {};
@@ -856,6 +845,33 @@ returnObject[0] = {
   },
 };
 
+function meanRounded(items, key) {
+  const valid = items.map((d) => Math.abs(Number(d[key]))).filter((v) => Number.isFinite(v));
+  return valid.length
+    ? Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 10) / 10
+    : undefined;
+}
+
+/** Per-match mean of a numeric field, then mean and median across matches (each match weighted once). */
+function meanAndMedianAcrossMatches(rows, key) {
+  const byMatch = {};
+  rows.forEach((row) => {
+    const m = row.match;
+    if (m === undefined || m === null) return;
+    if (!byMatch[m]) byMatch[m] = [];
+    byMatch[m].push(Math.abs(Number(row[key]) || 0));
+  });
+  const perMatchMeans = Object.values(byMatch).map(
+    (vals) => vals.reduce((a, b) => a + b, 0) / vals.length
+  );
+  if (perMatchMeans.length === 0) return { mean: 0, median: 0 };
+  const mean = perMatchMeans.reduce((a, b) => a + b, 0) / perMatchMeans.length;
+  const sorted = [...perMatchMeans].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  return { mean, median };
+}
 
 // Aggregate function definition
 function aggregateByMatch(dataArray) {
@@ -873,10 +889,8 @@ function aggregateByMatch(dataArray) {
           const wins = withVal.filter(d => d.winauto === true || d.winauto === 1).length;
           return wins >= withVal.length / 2;
         },
-        fouls: (items) => {
-          const valid = items.map(d => Math.abs(Number(d.fouls))).filter(v => Number.isFinite(v));
-          return valid.length ? Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 10) / 10 : undefined;
-        },
+        majorfouls: (items) => meanRounded(items, 'majorfouls'),
+        minorfouls: (items) => meanRounded(items, 'minorfouls'),
       }),
     ]),
     mutate({

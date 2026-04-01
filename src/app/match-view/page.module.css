@@ -481,15 +481,16 @@
 }
 
 .foulBox {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
+    justify-items: center;
+    gap: 8px 12px;
     height: 200px;
     border: 3px solid;
     border-radius: 12px;
-    padding: 20px;
+    padding: 16px;
 }
 
 .foulStat {
@@ -507,7 +508,7 @@
 
 .foulValue {
     font-family: 'Teko', sans-serif;
-    font-size: 48px;
+    font-size: 36px;
     font-weight: bold;
     line-height: 1;
 }

@@ -313,7 +313,21 @@ function ScoutingApp() {
     autoEPA: Math.round(teamData.last3Auto ?? teamData.displayAuto ?? 0),
     teleEPA: Math.round(teamData.last3Tele ?? teamData.displayTele ?? 0),
     endgameEPA: Math.round(teamData.last3End ?? teamData.displayEnd ?? 0),
-    fouls: { mean: teamData.foulsMean ?? 0, median: teamData.foulsMedian ?? 0 },
+    fouls: useLast3 && teamData.last3Fouls?.major
+      ? {
+          major: teamData.last3Fouls.major,
+          minor: teamData.last3Fouls.minor,
+        }
+      : {
+          major: {
+            mean: teamData.majorFoulsMean ?? 0,
+            median: teamData.majorFoulsMedian ?? 0,
+          },
+          minor: {
+            mean: teamData.minorFoulsMean ?? 0,
+            median: teamData.minorFoulsMedian ?? 0,
+          },
+        },
     // Defense Quality from DB "defense" column: 0=weak, 1=harassment, 2=game changing
     defenseQuality: (useLast3 && teamData.last3Defense)
       ? { weak: teamData.last3Defense.weak, harassment: teamData.last3Defense.harassment, gameChanging: teamData.last3Defense.gameChanging }
@@ -589,12 +603,20 @@ function TeamCard({ team }) {
           <h3>Fouls</h3>
           <div className={styles.foulBox} style={{ borderColor: team.darkColor, backgroundColor: team.lightColor }}>
             <div className={styles.foulStat}>
-              <span className={styles.foulLabel}>Mean</span>
-              <span className={styles.foulValue} style={{ color: team.darkColor }}>{team.fouls.mean}</span>
+              <span className={styles.foulLabel}>Major μ</span>
+              <span className={styles.foulValue} style={{ color: team.darkColor }}>{team.fouls.major.mean}</span>
             </div>
             <div className={styles.foulStat}>
-              <span className={styles.foulLabel}>Median</span>
-              <span className={styles.foulValue} style={{ color: team.darkColor }}>{team.fouls.median}</span>
+              <span className={styles.foulLabel}>Major med.</span>
+              <span className={styles.foulValue} style={{ color: team.darkColor }}>{team.fouls.major.median}</span>
+            </div>
+            <div className={styles.foulStat}>
+              <span className={styles.foulLabel}>Minor μ</span>
+              <span className={styles.foulValue} style={{ color: team.darkColor }}>{team.fouls.minor.mean}</span>
+            </div>
+            <div className={styles.foulStat}>
+              <span className={styles.foulLabel}>Minor med.</span>
+              <span className={styles.foulValue} style={{ color: team.darkColor }}>{team.fouls.minor.median}</span>
             </div>
           </div>
         </div>

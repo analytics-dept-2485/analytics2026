@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * One-time migration: add foulcomments column to phd2026.
+ * One-time migration: add foulcomments column to dcmp2026.
  * Run from repo root: node analytics2026/scripts/migrate-add-foulcomments.mjs
  * Loads env from analytics2026/.env.local
  */
@@ -33,8 +33,8 @@ if (!connectionString) {
 const client = new Client({ connectionString });
 await client.connect();
 try {
-  await client.query('ALTER TABLE phd2026 ADD COLUMN IF NOT EXISTS foulcomments TEXT;');
-  console.log('phd2026.foulcomments column added (or already exists).');
+  await client.query('ALTER TABLE dcmp2026 ADD COLUMN IF NOT EXISTS foulcomments TEXT;');
+  console.log('dcmp2026.foulcomments column added (or already exists).');
 } finally {
   await client.end();
 }

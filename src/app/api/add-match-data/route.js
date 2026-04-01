@@ -58,7 +58,7 @@ export async function POST(req) {
   if (body.noshow) {
     console.log("no show!");
     let resp = await sql`
-      INSERT INTO sdd2026 (ScoutName, ScoutTeam, Team, Match, MatchType, NoShow)
+      INSERT INTO dcmp2026 (ScoutName, ScoutTeam, Team, Match, MatchType, NoShow)
       VALUES (${body.scoutname}, ${body.scoutteam}, ${body.team}, ${adjustedMatch}, ${body.matchType}, ${body.noshow})
     `;
     return NextResponse.json({ message: "Success!" }, { status: 201 });
@@ -196,7 +196,7 @@ if (body.playeddefense) {
 
   // Insert Data into Database
   let resp = await sql`
-    INSERT INTO sdd2026 (
+    INSERT INTO dcmp2026 (
       scoutname, scoutteam, team, match, matchtype, noshow,
       autoclimb, autoclimbposition, autofuel,
       intakeground, intakeoutpost, passingbulldozer, passingshooter, passingdump, shootwhilemove, telefuel,

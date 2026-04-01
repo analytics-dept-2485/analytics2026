@@ -3,11 +3,18 @@ import { sql } from '@vercel/postgres';
 import { tidy, mutate, select, summarizeAll, groupBy, summarize } from '@tidyjs/tidy';
 import { calcAuto, calcEPA } from "@/util/calculations";
 
+/** Per-scout foul total for defense penalty: major + minor (matches compute-picklist). */
+function foulScalar(row) {
+  const major = Math.abs(Number(row.majorfouls));
+  const minor = Math.abs(Number(row.minorfouls));
+  return (Number.isFinite(major) ? major : 0) + (Number.isFinite(minor) ? minor : 0);
+}
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { rows: rawRows } = await sql`SELECT * FROM sdd2026;`;
+    const { rows: rawRows } = await sql`SELECT * FROM dcmp2026;`;
     const rows = rawRows.filter(
       (row) => !row.noshow && row.team != null && row.team !== '' && Number(row.team) > 0
     );
@@ -161,8 +168,7 @@ export async function GET() {
         entry.defenseTypes.push(defenseType);
       }
 
-      const f = Number(row.fouls);
-      entry.foulsSum += Number.isFinite(f) ? Math.abs(f) : 0;
+      entry.foulsSum += foulScalar(row);
       entry.foulsCount += 1;
     });
 
