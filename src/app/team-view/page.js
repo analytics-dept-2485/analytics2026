@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import VBox from "./components/VBox";
+import HBox from "./components/HBox";
 import ScoutsByMatch from "./components/ScoutsByMatch";
 import Comments from "./components/Comments";
 import TwoByTwo from "./components/TwoByTwo";
@@ -408,12 +409,7 @@ function TeamView() {
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Defense Comments"} value={data.defenseComments} />
                    <Comments color1={Colors[0][1]} color2={Colors[0][0]} title={"Foul Elaboration"} value={data.foulComments} />
                  </div>
-                 <ScoutsByMatch
-                   color1={Colors[0][1]}
-                   color2={Colors[0][0]}
-                   title={"Scouts"}
-                   groups={data.scoutsByMatch}
-                 />
+                 <HBox color1={Colors[0][1]} color2={Colors[0][0]} title={"Scouts"} value={data.scoutsByMatch} />
                </div>
          </div>
 
