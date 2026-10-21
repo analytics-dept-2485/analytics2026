@@ -147,7 +147,7 @@ export default function ClimbCheckbox({ internalName, changeListener }) {
                             value="9"
                             checked={selectedValue === "9"}
                             onChange={() => handleChange("9")}
-                            defaultChecked
+                            //defaultChecked
                         />
                         None
                     </label>

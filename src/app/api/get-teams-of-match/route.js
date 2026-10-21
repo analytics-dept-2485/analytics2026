@@ -17,7 +17,7 @@ export async function GET(request) {
   try {
     // 1) Try scouting database first (works for your recorded/simulated matches)
     const dbResult = await sql`
-      SELECT DISTINCT team FROM dcmp2026
+      SELECT DISTINCT team FROM scc2026
       WHERE match = ${matchNum} AND (noshow = false OR noshow IS NULL)
       ORDER BY team
     `;
@@ -43,7 +43,7 @@ export async function GET(request) {
     }
 
     const response = await fetch(
-      `https://www.thebluealliance.com/api/v3/event/2026cascmp/matches/simple`,
+      `https://www.thebluealliance.com/api/v3/event/2026casan1/matches/simple`,
       {
         headers: {
           "X-TBA-Auth-Key": process.env.TBA_AUTH_KEY,

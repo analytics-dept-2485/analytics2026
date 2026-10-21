@@ -15,7 +15,7 @@ export async function GET(request) {
   }
 
   // Fetch team data from database
-  let data = await sql`SELECT * FROM dcmp2026 WHERE team = ${team};`;
+  let data = await sql`SELECT * FROM scc2026 WHERE team = ${team};`;
   const rows = data.rows;
 
   if (rows.length === 0) {
@@ -78,7 +78,7 @@ export async function GET(request) {
   }
 
   const tbaHeaders = { 'X-TBA-Auth-Key': process.env.TBA_AUTH_KEY, 'Accept': 'application/json' };
-  const TBA_EVENT_KEY = '2026cascmp';
+  const TBA_EVENT_KEY = '2026casan1';
 
   const [teamName, tbaMatchData] = await Promise.all([
     fetch(`https://www.thebluealliance.com/api/v3/team/frc${team}/simple`, { headers: tbaHeaders })
